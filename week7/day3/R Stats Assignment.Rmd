@@ -1,0 +1,93 @@
+---
+title: "Stats in R Assignment"
+author: "Alex Lucchesi"
+date: "2023/05/30"
+output: html_document
+---
+
+## Assignment
+For today's assignment, you will be given a blank notebook and a link to the [Call of Duty Dataset](https://www.kaggle.com/datasets/beridzeg45/call-of-duty-reviews)
+You will need to fill out the notebook and create your own code chunks to run code. Remember that we use this code without any quotation marks to create a code chunk:
+'```{r}
+'```
+### Your Goal:
+
+To receive credit for today's assignment, you will need to:
+
+* Import the dataset
+* Load the dataset into a tibble
+* Mutate a new column
+* Create a hypothesis regarding your data and communicate that hypothesis in a scientific method.
+* Create a notebook that has markdown cells, explaining your code and process/thoughts. **Your markdown should be well thought out and reflect a thorough analysis.**
+* Clean the data
+* Explore the data (include visualizations)
+* Create a statistical test and communicate the results
+```{r}
+#imports
+library(tidyverse)
+library(dplyr)
+library(conflicted)
+dplyr::filter
+```
+
+```{r}
+#read in the csv
+df <- read.csv("/home/user/Documents/coding_temple/week7/day3/Call of Duty Reviews.csv")
+df
+```
+
+```{r}
+#tidy the columns, using lowercase and adding underscores
+tidy <- function(n){
+  names(n) <- names(n) %>% str_replace_all("\\.", "_")%>%tolower()
+  return(n)
+}
+df <- tidy(df)
+```
+
+```{r}
+#mutate the two compound score columns into a new average compound score between the two
+df_mutate <- mutate(df,average_compound_score=((critic_compound_score+user_compound_score)/2))
+df_mutate
+```
+
+```{r}
+#Based on the data shown, a question could be asked that does the release year per each Call of Duty release have a direct correlation on the received metascore,
+# considering different factors that may play a role in release year such as public attention and hype, Activision's promo budget different per year, etc
+
+# the null hypothesis based on the data above is that, no, the release year does not have a direct correlation on the received metascore of the game.
+# the alternative hypothesis would then be that the release year does indeed have a direct correlation on the received metascore of the game.
+```
+
+```{r}
+# in order to test this, we must change the release year columns from character type to numeric first
+
+df_mutate$release_year <- as.numeric(df_mutate$release_year)
+df_mutate
+```
+
+```{r}
+ggplot(data=df_mutate, mapping=aes(x=metascore, y=release_year, color=release_year))
+```
+
+```{r}
+#performing correlation testing
+correlation <- cor.test(df_mutate$release_year, df_mutate$metascore)
+correlation
+```
+
+```{r}
+ggplot(data=df_mutate) + geom_point(mapping=aes(x=metascore, y=release_year, color=release_year))
+```
+
+```{r}
+correlation
+```
+
+```{r}
+# The results showed that there was a -0.1975 correlation coefficient, showing there is a very weak negative correlation between metascore and the release year
+# The resulted p-value is .0429, which is less than our alpha value of 0.05, showing that we would reject the null hypothesis in favor of the alternative hypothesis
+```
+
+
+
