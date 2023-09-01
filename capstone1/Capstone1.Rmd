@@ -1,0 +1,237 @@
+'''{r}
+'''
+#**Capstone 1**
+
+The data we are going to be analyzing today is a current report of the top 500 artists in ascending order from Spotify's rankings system.
+Each artist in the data spread has attached statistics of their numbers on other social media platforms, along with listening platforms such as Beatport.
+
+We will be looking into the data to find correlations on all angles with a focus on the genre of the artist. Other metrics such as popularity, what creates different parameters of popularity,
+and the difference between artist rankings will be discussed to see if anything has an effect on fan engagement with the artist.
+
+
+IMPORTS
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(conflicted)
+dplyr::filter
+```
+
+Hypothesis : The difference in each social media following statistics or listening platform statistics has a direct correlation to the general genre of the artist, showing that each online music store has an association with a specific group of musical genres, differing from other online music stores. 
+
+
+Reading in the file
+
+
+```{r}
+df <- read.csv('/home/user/Documents/coding_temple/Capstone/capstone1/spotify_top_500_artists.csv')
+
+```
+
+```{r}
+df
+```
+
+Beginning to clean the data, starting with the columns
+
+```{r}
+clean_cols <- function(x){
+  # Names is an attribute of the dataframe object. That object is the columns.
+  names(x) <- tolower(names(x)) %>% str_replace_all("\\.", "_")
+ 
+  return(x)
+}
+df <- clean_cols(df)
+df
+```
+
+```{r}
+#dropping columns with incomplete data and merging two identical columns "rank" and "spotify_rank"
+dforg <- df[-c(6,7,9,11,15,17,19,22,24,25,26,28,29,31,33,34,36,38,39,41,42,43,48)]
+dforg <- dforg %>% rename("spotify_rank" = "rank")
+```
+
+```{r}
+dforg
+```
+
+```{r}
+#replacing N/A with NA's to identify null values in the dataframe
+dforg[dforg == "N/A"] <- NA
+```
+
+Dealing with null values
+
+```{r}
+dforg  %>% summarize(na_count = sum(is.na(dforg)))
+colSums(is.na(dforg))
+```
+```{r}
+dforg
+```
+
+Replacing the null values with 0's seems to be the better option over filtering them out, since this data is dealing with if somebody is using a 
+platform
+```{r}
+dforg <- dforg %>% replace_na(list(x=0,y='unknown'))
+```
+
+checking again
+
+```{r}
+sum(colSums(is.na(dforg)))
+```
+
+The data is organized and clean. Now we will turn it into a csv to export
+```{r}
+
+write.csv(dforg, "Spotify_Rankings_Data.csv")
+```
+
+Now that we have clean data, lets do our analyzing and see what we find
+
+
+The first question that I want to look into, going back to my original hypothesis is all about the genre. Popularity patterns can happen anywhere! maybe certain areas 
+encourage imitation of your culture's favorites?
+
+
+Hypothesis:
+  
+H0:  Genre per artist has no effect on the difference in social media statistics
+
+H1:  Genre per artist has a direct effect on the difference in social media statistics
+
+
+
+We will see whether the hypothesis will be rejected or failed to reject
+
+```{r}
+dforg %>% 
+    arrange(genre)%>%
+    slice(1:30) %>%
+    ggplot(. ,aes(genre, spotify_monthly_listeners_total))
+```
+
+```{r}
+dforg %>% 
+    arrange(genre)%>%
+    slice(1:30) %>%
+    ggplot(. ,aes(genre, spotify_followers_total))+
+```
+
+
+```{r}
+dforg %>% 
+    arrange(genre)%>%
+    slice(1:30) %>%
+    ggplot(. ,aes(genre, spotify_playlist_reach_total))+
+```
+
+```{r}
+dforg %>% 
+    arrange(genre)%>%
+    slice(1:30) %>%
+    ggplot(. ,aes(genre, twitter_followers_total))+
+```
+
+```{r}
+dforg %>% 
+    arrange(genre)%>%
+    slice(1:30) %>%
+    ggplot(. ,aes(genre, instagram_followers_total))+
+```
+The results from these charts show that it would appear the two do not have a strong relationship at all. The difference between
+following comparatively have a similar spread, thus we can assume that it is more just patterns of 
+each platform that play a bigger role in the following count, rather than the genre of the artist.
+
+This means we would fail to reject the null hypothesis 
+
+
+Hypothesis:
+  
+H0:  The following an artist has on one social media does not have any effect on their following count comparatively
+
+H1:  The following that each artist has does indeed have a direct effect on their following count comparatively
+
+
+We will find this out by performing correlation tests between their followings, and comparing the co-effecient's to see if they are consistent or not
+
+We will perform a test to see whether the hypothesis will be rejected or failed to reject
+```{r}
+tester = cor.test(dforg$twitter_followers_total,dforg$spotify_followers_total)
+tester
+
+```
+
+
+
+```{r}
+tester = cor.test(dforg$instagram_followers_total,dforg$facebook_followers_total)
+tester
+
+```
+
+```{r}
+tester = cor.test(dforg$deezer_fans_total,dforg$tiktok_followers_total)
+tester
+
+```
+
+The results show that it would appear the there is a significant medium positive relationship between twitter and spotify followings.
+the p-value between twitter and spotify was 0.00081
+the correlation coefficient was .3313
+
+on this next test, there may have been bias introduced. Facebook and Instagram are under the same ownership, this was not taken into consideration 
+originally. The companies have the same promotional algorithms and trend patterns so this data most liekly will not show the same relationship.
+the p-value between facebook and instagram was	1.225e-11
+the correlation coefficient was .6153
+
+The correlation coefficient between deezer and tiktok was a negative value of -0.231 and the p-value was .8205
+These points signify that there is a non significant, very small negative relationship between the following statistics of the 
+two platforms.
+
+Big difference between these three tests! These conclusions show that we can fail to reject the original hypothesis, meaning there
+does not seem to be any real significant correlation between the following statistics, and the following an artist has on one platform
+does not necessarily reflect on others
+
+
+
+Hypothesis:
+  
+H0:  The statistical difference between how many monthly followers an artist has and how many monthly plays they get does not play a role in Spotify's ranking result
+
+H1:  The statistical difference between how many monthly followers an artist has and how many monthly plays they get had a direct effect on Spotify's ranking result
+
+This will be fun since the ranking is ordered in a linear fashion
+
+
+
+We will perform a test to see whether the hypothesis will be rejected or failed to reject
+
+Let's see if there is a correlation between the different spotify statistics
+
+```{r}
+tester = cor.test(dforg$spotify_rank,dforg$spotify_followers_total)
+tester
+```
+
+```{r}
+tester = cor.test(dforg$spotify_rank,dforg$spotify_monthly_listeners_total)
+tester
+```
+
+lets try some mapping
+```{r}
+ggplot(data = dforg) +
+  geom_point(mapping = aes(x =spotify_rank , y = spotify_monthly_listeners_total))
+```
+
+between spotify rank, and spotify following, the correlation coefficient was -0.7475 and the p-value <.001, at 9.446e-19
+These show that there is a significant very small negative relationship between the rank and follower count
+
+next, were checking monthly listeners
+The correlation coefficient was -0.766 and the p-value was 1.619e-20, or <.001. even smaller than the last!
+
+The results all support the alternative hypothesis that how many follower an artist has and how many monthly listeners they have has a direct relationship 
+with the platforms ranking system. Seems to add up right? 
