@@ -1,1 +1,1 @@
-Link to the app: https://hoffmanstocksearch.streamlit.app/
+Link to the app: https://polygonstocksearch.streamlit.app/
